@@ -11,7 +11,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001; // Railway uses dynamic PORT
 
 // Enable CORS for localhost:8080
 app.use(cors());
@@ -162,11 +162,11 @@ app.get('/health', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('🏥 Glucós Email Server');
   console.log('=' .repeat(50));
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
   console.log(`📧 Gmail: ${process.env.GMAIL_USER || 'NOT CONFIGURED'}`);
   console.log('=' .repeat(50));
   console.log('');
@@ -174,7 +174,7 @@ app.listen(PORT, () => {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
     console.log('⚠️  WARNING: Gmail not configured!');
     console.log('');
-    console.log('📝 Create a .env file with:');
+    console.log('📝 Add environment variables:');
     console.log('   GMAIL_USER=your-email@gmail.com');
     console.log('   GMAIL_APP_PASSWORD=your-app-password');
     console.log('');
