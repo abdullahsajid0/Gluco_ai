@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: gluco-email-server
+    env: node
+    buildCommand: npm install
+    startCommand: node email-server.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+
