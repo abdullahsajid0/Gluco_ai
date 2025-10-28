@@ -1,0 +1,16 @@
+project_id = "unbcebrtsyknfasznnkm"
+
+[functions.orchestrator]
+verify_jwt = false
+
+[functions.guardian]
+verify_jwt = false
+
+[functions.nutritionist]
+verify_jwt = false
+
+[functions.coach]
+verify_jwt = false
+
+[functions.secretary]
+verify_jwt = false

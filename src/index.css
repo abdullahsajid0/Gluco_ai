@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 210 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 20% 15%;
+
+    /* Medical teal - trustworthy, calm */
+    --primary: 185 65% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 185 75% 65%;
+    
+    /* Soft medical background */
+    --secondary: 185 35% 95%;
+    --secondary-foreground: 185 65% 25%;
+
+    --muted: 210 30% 94%;
+    --muted-foreground: 210 15% 45%;
+
+    /* Warm coral for alerts */
+    --accent: 14 85% 62%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Critical alerts */
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success states */
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 210 25% 88%;
+    --input: 210 25% 92%;
+    --ring: 185 65% 48%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-medical: linear-gradient(135deg, hsl(185 65% 48%), hsl(185 75% 65%));
+    --gradient-alert: linear-gradient(135deg, hsl(14 85% 62%), hsl(25 85% 55%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%), hsl(185 35% 96%));
+    
+    /* Shadows */
+    --shadow-soft: 0 2px 8px -2px hsl(185 65% 48% / 0.15);
+    --shadow-medium: 0 4px 16px -4px hsl(185 65% 48% / 0.2);
+    --shadow-glow: 0 0 32px hsl(185 75% 65% / 0.3);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    --background: 210 25% 8%;
+    --foreground: 210 40% 95%;
+
+    --card: 210 20% 12%;
+    --card-foreground: 210 40% 95%;
+
+    --popover: 210 20% 12%;
+    --popover-foreground: 210 40% 95%;
+
+    --primary: 185 70% 55%;
+    --primary-foreground: 210 25% 8%;
+    --primary-glow: 185 75% 70%;
+
+    --secondary: 210 20% 18%;
+    --secondary-foreground: 210 40% 95%;
+
+    --muted: 210 20% 18%;
+    --muted-foreground: 210 20% 60%;
+
+    --accent: 14 85% 62%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 70% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 210 20% 22%;
+    --input: 210 20% 18%;
+    --ring: 185 70% 55%;
+
+    --gradient-medical: linear-gradient(135deg, hsl(185 70% 55%), hsl(185 75% 70%));
+    --gradient-alert: linear-gradient(135deg, hsl(14 85% 62%), hsl(25 85% 55%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 25% 8%), hsl(210 20% 12%));
+    
+    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
+    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 32px hsl(185 75% 70% / 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .text-gradient-medical {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-medical);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+}

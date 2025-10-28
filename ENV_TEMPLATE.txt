@@ -1,0 +1,17 @@
+# Glucós Environment Configuration
+# Copy this content to a file named .env in the project root
+
+# Supabase Configuration
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Note: API keys for Groq, Gemini, and Resend are configured
+# in Supabase Edge Functions as secrets, not in .env
+# 
+# To set edge function secrets, use Supabase Dashboard:
+# 1. Go to Project Settings > Edge Functions > Secrets
+# 2. Add these secrets:
+#    - GROQ_API_KEY (from https://console.groq.com)
+#    - LOVABLE_API_KEY (for Gemini 2.5 Pro access)
+#    - RESEND_API_KEY (from https://resend.com)
+
