@@ -1,9 +1,10 @@
 /**
- * Email Server using Resend HTTP API
- * Works on Railway, Render, and all cloud platforms!
+ * Email Server using Brevo (Sendinblue) SMTP
+ * Works on Railway and all cloud platforms!
  */
 
 import express from 'express';
+import nodemailer from 'nodemailer';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
@@ -11,49 +12,44 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001; // Railway uses dynamic PORT
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const BREVO_SMTP_KEY = process.env.BREVO_SMTP_KEY;
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@glucos.com';
 
 // Enable CORS
 app.use(cors());
 app.use(express.json());
 
-// Verify Resend API key on startup
-if (!RESEND_API_KEY) {
-  console.error('❌ RESEND_API_KEY not configured!');
+// Create Brevo SMTP transporter
+const transporter = nodemailer.createTransport({
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  secure: false, // Use TLS
+  auth: {
+    user: BREVO_SENDER_EMAIL,
+    pass: BREVO_SMTP_KEY,
+  },
+});
+
+// Verify transporter configuration on startup
+if (!BREVO_SMTP_KEY) {
+  console.error('❌ BREVO_SMTP_KEY not configured!');
   console.log('');
-  console.log('⚠️  Get your FREE Resend API key:');
-  console.log('   1. Visit: https://resend.com/signup');
-  console.log('   2. Create account (free 3,000 emails/month)');
-  console.log('   3. Go to Settings → API Keys');
-  console.log('   4. Create new API key');
-  console.log('   5. Add to Railway Variables: RESEND_API_KEY=re_...');
+  console.log('⚠️  Get your FREE Brevo SMTP key:');
+  console.log('   1. Visit: https://app.brevo.com/settings/keys/smtp');
+  console.log('   2. Create account (free 300 emails/day)');
+  console.log('   3. Copy your SMTP Key');
+  console.log('   4. Add to Railway Variables:');
+  console.log('      BREVO_SMTP_KEY=your-smtp-key');
+  console.log('      BREVO_SENDER_EMAIL=your-email@example.com');
   console.log('');
 } else {
-  console.log('✅ Email server is ready to send emails via Resend');
-}
-
-// Send email using Resend HTTP API
-async function sendEmailViaResend(from, to, subject, html) {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: from,
-      to: Array.isArray(to) ? to : [to],
-      subject: subject,
-      html: html,
-    }),
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ Brevo SMTP configuration error:', error.message);
+    } else {
+      console.log('✅ Email server is ready to send emails via Brevo');
+    }
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Resend API error: ${response.status} - ${error}`);
-  }
-
-  return await response.json();
 }
 
 // Emergency alert endpoint
@@ -78,14 +74,14 @@ app.post('/send-emergency-alert', async (req, res) => {
       timestamp,
     });
 
-    // Send email to all doctors using Resend
+    // Send email to all doctors using Brevo SMTP
     const emailPromises = doctorEmails.map((email) =>
-      sendEmailViaResend(
-        'Glucós Emergency Alert <onboarding@resend.dev>',
-        email,
-        `🚨 URGENT: ${alertType} Alert for ${patientName}`,
-        emailHTML
-      )
+      transporter.sendMail({
+        from: `"Glucós Emergency Alert" <${BREVO_SENDER_EMAIL}>`,
+        to: email,
+        subject: `🚨 URGENT: ${alertType} Alert for ${patientName}`,
+        html: emailHTML,
+      })
     );
 
     const results = await Promise.allSettled(emailPromises);
@@ -135,14 +131,14 @@ app.post('/send-weekly-report', async (req, res) => {
     // Generate report HTML
     const reportHTML = generateWeeklyReportEmail(patientName, weeklyData);
 
-    // Send email to all doctors using Resend
+    // Send email to all doctors using Brevo SMTP
     const emailPromises = doctorEmails.map((email) =>
-      sendEmailViaResend(
-        'Glucós Weekly Report <onboarding@resend.dev>',
-        email,
-        `📊 Weekly Diabetes Report - ${patientName}`,
-        reportHTML
-      )
+      transporter.sendMail({
+        from: `"Glucós Weekly Report" <${BREVO_SENDER_EMAIL}>`,
+        to: email,
+        subject: `📊 Weekly Diabetes Report - ${patientName}`,
+        html: reportHTML,
+      })
     );
 
     const results = await Promise.allSettled(emailPromises);
@@ -182,30 +178,35 @@ app.post('/send-weekly-report', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'Glucós Email Server (Resend)',
+    service: 'Glucós Email Server (Brevo SMTP)',
     timestamp: new Date().toISOString(),
-    configured: !!RESEND_API_KEY,
+    configured: !!BREVO_SMTP_KEY,
+    sender: BREVO_SENDER_EMAIL,
   });
 });
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log('');
-  console.log('🏥 Glucós Email Server (Resend API)');
+  console.log('🏥 Glucós Email Server (Brevo SMTP)');
   console.log('=' .repeat(50));
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📧 Email Provider: Resend`);
-  console.log(`🔑 API Key: ${RESEND_API_KEY ? 'Configured ✅' : 'NOT CONFIGURED ❌'}`);
+  console.log(`📧 Email Provider: Brevo (Sendinblue)`);
+  console.log(`📨 Sender: ${BREVO_SENDER_EMAIL}`);
+  console.log(`🔑 SMTP Key: ${BREVO_SMTP_KEY ? 'Configured ✅' : 'NOT CONFIGURED ❌'}`);
   console.log('=' .repeat(50));
   console.log('');
   
-  if (!RESEND_API_KEY) {
-    console.log('⚠️  WARNING: Resend API Key not configured!');
+  if (!BREVO_SMTP_KEY) {
+    console.log('⚠️  WARNING: Brevo SMTP Key not configured!');
     console.log('');
     console.log('📝 Setup Instructions:');
-    console.log('   1. Sign up at https://resend.com (FREE)');
-    console.log('   2. Get API key from Settings → API Keys');
-    console.log('   3. Add to Railway Variables: RESEND_API_KEY=re_...');
+    console.log('   1. Sign up at https://app.brevo.com (FREE - 300 emails/day)');
+    console.log('   2. Go to Settings → SMTP & API → SMTP');
+    console.log('   3. Copy your SMTP Key');
+    console.log('   4. Add to Railway Variables:');
+    console.log('      BREVO_SMTP_KEY=your-smtp-key');
+    console.log('      BREVO_SENDER_EMAIL=your-email@example.com');
     console.log('');
   }
 });
