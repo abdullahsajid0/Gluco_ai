@@ -43,7 +43,9 @@ class AgentService {
       });
 
       // Send emergency email alert for critical readings
-      if (analysis.alert && analysis.severity === "critical") {
+      // Trigger alert if AI says critical OR if BGL is in danger zone
+      const isCriticalBGL = bgl < 70 || bgl > 250;
+      if ((analysis.alert && analysis.severity === "critical") || isCriticalBGL) {
         this.sendEmergencyAlert(bgl, trend, analysis);
       }
 
