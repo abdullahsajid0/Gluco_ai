@@ -1,6 +1,6 @@
 /**
- * Email Server using Brevo (Sendinblue) SMTP
- * Works on Railway and all cloud platforms!
+ * Simple Email Server using Gmail SMTP
+ * No Supabase deployment needed!
  */
 
 import express from 'express';
@@ -12,45 +12,36 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001; // Railway uses dynamic PORT
-const BREVO_SMTP_KEY = process.env.BREVO_SMTP_KEY;
-const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@glucos.com';
 
-// Enable CORS
+// Enable CORS for localhost:8080
 app.use(cors());
 app.use(express.json());
 
-// Create Brevo SMTP transporter
+// Create Gmail transporter
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false, // Use TLS
+  service: 'gmail',
   auth: {
-    user: BREVO_SENDER_EMAIL,
-    pass: BREVO_SMTP_KEY,
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD, // App password, not regular password
   },
 });
 
-// Verify transporter configuration on startup
-if (!BREVO_SMTP_KEY) {
-  console.error('❌ BREVO_SMTP_KEY not configured!');
-  console.log('');
-  console.log('⚠️  Get your FREE Brevo SMTP key:');
-  console.log('   1. Visit: https://app.brevo.com/settings/keys/smtp');
-  console.log('   2. Create account (free 300 emails/day)');
-  console.log('   3. Copy your SMTP Key');
-  console.log('   4. Add to Railway Variables:');
-  console.log('      BREVO_SMTP_KEY=your-smtp-key');
-  console.log('      BREVO_SENDER_EMAIL=your-email@example.com');
-  console.log('');
-} else {
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error('❌ Brevo SMTP configuration error:', error.message);
-    } else {
-      console.log('✅ Email server is ready to send emails via Brevo');
-    }
-  });
-}
+// Verify transporter configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Email server configuration error:', error.message);
+    console.log('');
+    console.log('⚠️  Make sure you have:');
+    console.log('   1. Created a .env file in the project root');
+    console.log('   2. Added GMAIL_USER=your-email@gmail.com');
+    console.log('   3. Added GMAIL_APP_PASSWORD=your-app-password');
+    console.log('');
+    console.log('📖 Get App Password: https://myaccount.google.com/apppasswords');
+    console.log('');
+  } else {
+    console.log('✅ Email server is ready to send emails');
+  }
+});
 
 // Emergency alert endpoint
 app.post('/send-emergency-alert', async (req, res) => {
@@ -74,10 +65,10 @@ app.post('/send-emergency-alert', async (req, res) => {
       timestamp,
     });
 
-    // Send email to all doctors using Brevo SMTP
+    // Send email to all doctors
     const emailPromises = doctorEmails.map((email) =>
       transporter.sendMail({
-        from: `"Glucós Emergency Alert" <${BREVO_SENDER_EMAIL}>`,
+        from: `"Glucós Emergency Alert" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: `🚨 URGENT: ${alertType} Alert for ${patientName}`,
         html: emailHTML,
@@ -131,10 +122,10 @@ app.post('/send-weekly-report', async (req, res) => {
     // Generate report HTML
     const reportHTML = generateWeeklyReportEmail(patientName, weeklyData);
 
-    // Send email to all doctors using Brevo SMTP
+    // Send email to all doctors
     const emailPromises = doctorEmails.map((email) =>
       transporter.sendMail({
-        from: `"Glucós Weekly Report" <${BREVO_SENDER_EMAIL}>`,
+        from: `"Glucós Weekly Report" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: `📊 Weekly Diabetes Report - ${patientName}`,
         html: reportHTML,
@@ -178,35 +169,30 @@ app.post('/send-weekly-report', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'Glucós Email Server (Brevo SMTP)',
+    service: 'Glucós Email Server',
     timestamp: new Date().toISOString(),
-    configured: !!BREVO_SMTP_KEY,
-    sender: BREVO_SENDER_EMAIL,
+    gmail: process.env.GMAIL_USER || 'NOT CONFIGURED',
   });
 });
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log('');
-  console.log('🏥 Glucós Email Server (Brevo SMTP)');
+  console.log('🏥 Glucós Email Server');
   console.log('=' .repeat(50));
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📧 Email Provider: Brevo (Sendinblue)`);
-  console.log(`📨 Sender: ${BREVO_SENDER_EMAIL}`);
-  console.log(`🔑 SMTP Key: ${BREVO_SMTP_KEY ? 'Configured ✅' : 'NOT CONFIGURED ❌'}`);
+  console.log(`📧 Gmail: ${process.env.GMAIL_USER || 'NOT CONFIGURED'}`);
   console.log('=' .repeat(50));
   console.log('');
   
-  if (!BREVO_SMTP_KEY) {
-    console.log('⚠️  WARNING: Brevo SMTP Key not configured!');
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.log('⚠️  WARNING: Gmail not configured!');
     console.log('');
-    console.log('📝 Setup Instructions:');
-    console.log('   1. Sign up at https://app.brevo.com (FREE - 300 emails/day)');
-    console.log('   2. Go to Settings → SMTP & API → SMTP');
-    console.log('   3. Copy your SMTP Key');
-    console.log('   4. Add to Railway Variables:');
-    console.log('      BREVO_SMTP_KEY=your-smtp-key');
-    console.log('      BREVO_SENDER_EMAIL=your-email@example.com');
+    console.log('📝 Add environment variables:');
+    console.log('   GMAIL_USER=your-email@gmail.com');
+    console.log('   GMAIL_APP_PASSWORD=your-app-password');
+    console.log('');
+    console.log('📖 Get App Password: https://myaccount.google.com/apppasswords');
     console.log('');
   }
 });

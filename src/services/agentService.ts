@@ -7,8 +7,7 @@ import { dataStore } from "./dataStore";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-// Use Vercel API routes for email (no external email server needed!)
-const EMAIL_SERVER_URL = import.meta.env.VITE_EMAIL_SERVER_URL || "/api";
+const EMAIL_SERVER_URL = import.meta.env.VITE_EMAIL_SERVER_URL || "http://localhost:3001";
 
 export interface AgentResponse {
   agent: string;
