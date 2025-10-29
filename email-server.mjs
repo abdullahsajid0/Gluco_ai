@@ -1,10 +1,9 @@
 /**
- * Simple Email Server using Gmail SMTP
- * No Supabase deployment needed!
+ * Email Server using Resend HTTP API
+ * Works on Railway, Render, and all cloud platforms!
  */
 
 import express from 'express';
-import nodemailer from 'nodemailer';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
@@ -12,36 +11,50 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001; // Railway uses dynamic PORT
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
-// Enable CORS for localhost:8080
+// Enable CORS
 app.use(cors());
 app.use(express.json());
 
-// Create Gmail transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD, // App password, not regular password
-  },
-});
+// Verify Resend API key on startup
+if (!RESEND_API_KEY) {
+  console.error('❌ RESEND_API_KEY not configured!');
+  console.log('');
+  console.log('⚠️  Get your FREE Resend API key:');
+  console.log('   1. Visit: https://resend.com/signup');
+  console.log('   2. Create account (free 3,000 emails/month)');
+  console.log('   3. Go to Settings → API Keys');
+  console.log('   4. Create new API key');
+  console.log('   5. Add to Railway Variables: RESEND_API_KEY=re_...');
+  console.log('');
+} else {
+  console.log('✅ Email server is ready to send emails via Resend');
+}
 
-// Verify transporter configuration
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ Email server configuration error:', error.message);
-    console.log('');
-    console.log('⚠️  Make sure you have:');
-    console.log('   1. Created a .env file in the project root');
-    console.log('   2. Added GMAIL_USER=your-email@gmail.com');
-    console.log('   3. Added GMAIL_APP_PASSWORD=your-app-password');
-    console.log('');
-    console.log('📖 Get App Password: https://myaccount.google.com/apppasswords');
-    console.log('');
-  } else {
-    console.log('✅ Email server is ready to send emails');
+// Send email using Resend HTTP API
+async function sendEmailViaResend(from, to, subject, html) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: from,
+      to: Array.isArray(to) ? to : [to],
+      subject: subject,
+      html: html,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Resend API error: ${response.status} - ${error}`);
   }
-});
+
+  return await response.json();
+}
 
 // Emergency alert endpoint
 app.post('/send-emergency-alert', async (req, res) => {
@@ -65,14 +78,14 @@ app.post('/send-emergency-alert', async (req, res) => {
       timestamp,
     });
 
-    // Send email to all doctors
+    // Send email to all doctors using Resend
     const emailPromises = doctorEmails.map((email) =>
-      transporter.sendMail({
-        from: `"Glucós Emergency Alert" <${process.env.GMAIL_USER}>`,
-        to: email,
-        subject: `🚨 URGENT: ${alertType} Alert for ${patientName}`,
-        html: emailHTML,
-      })
+      sendEmailViaResend(
+        'Glucós Emergency Alert <onboarding@resend.dev>',
+        email,
+        `🚨 URGENT: ${alertType} Alert for ${patientName}`,
+        emailHTML
+      )
     );
 
     const results = await Promise.allSettled(emailPromises);
@@ -115,14 +128,14 @@ app.post('/send-weekly-report', async (req, res) => {
     // Generate report HTML
     const reportHTML = generateWeeklyReportEmail(patientName, weeklyData);
 
-    // Send email to all doctors
+    // Send email to all doctors using Resend
     const emailPromises = doctorEmails.map((email) =>
-      transporter.sendMail({
-        from: `"Glucós Weekly Report" <${process.env.GMAIL_USER}>`,
-        to: email,
-        subject: `📊 Weekly Diabetes Report - ${patientName}`,
-        html: reportHTML,
-      })
+      sendEmailViaResend(
+        'Glucós Weekly Report <onboarding@resend.dev>',
+        email,
+        `📊 Weekly Diabetes Report - ${patientName}`,
+        reportHTML
+      )
     );
 
     const results = await Promise.allSettled(emailPromises);
@@ -155,30 +168,30 @@ app.post('/send-weekly-report', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'Glucós Email Server',
+    service: 'Glucós Email Server (Resend)',
     timestamp: new Date().toISOString(),
-    gmail: process.env.GMAIL_USER || 'NOT CONFIGURED',
+    configured: !!RESEND_API_KEY,
   });
 });
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log('');
-  console.log('🏥 Glucós Email Server');
+  console.log('🏥 Glucós Email Server (Resend API)');
   console.log('=' .repeat(50));
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📧 Gmail: ${process.env.GMAIL_USER || 'NOT CONFIGURED'}`);
+  console.log(`📧 Email Provider: Resend`);
+  console.log(`🔑 API Key: ${RESEND_API_KEY ? 'Configured ✅' : 'NOT CONFIGURED ❌'}`);
   console.log('=' .repeat(50));
   console.log('');
   
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    console.log('⚠️  WARNING: Gmail not configured!');
+  if (!RESEND_API_KEY) {
+    console.log('⚠️  WARNING: Resend API Key not configured!');
     console.log('');
-    console.log('📝 Add environment variables:');
-    console.log('   GMAIL_USER=your-email@gmail.com');
-    console.log('   GMAIL_APP_PASSWORD=your-app-password');
-    console.log('');
-    console.log('📖 Get App Password: https://myaccount.google.com/apppasswords');
+    console.log('📝 Setup Instructions:');
+    console.log('   1. Sign up at https://resend.com (FREE)');
+    console.log('   2. Get API key from Settings → API Keys');
+    console.log('   3. Add to Railway Variables: RESEND_API_KEY=re_...');
     console.log('');
   }
 });
