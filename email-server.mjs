@@ -93,6 +93,13 @@ app.post('/send-emergency-alert', async (req, res) => {
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;
 
+    // Log errors for failed emails
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`❌ Failed to send to ${doctorEmails[index]}:`, result.reason.message || result.reason);
+      }
+    });
+
     console.log(`✉️  Emails sent: ${successful} successful, ${failed} failed`);
     console.log('');
 
@@ -142,6 +149,13 @@ app.post('/send-weekly-report', async (req, res) => {
 
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;
+
+    // Log errors for failed emails
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`❌ Failed to send to ${doctorEmails[index]}:`, result.reason.message || result.reason);
+      }
+    });
 
     console.log(`✉️  Reports sent: ${successful} successful, ${failed} failed`);
     console.log('');
